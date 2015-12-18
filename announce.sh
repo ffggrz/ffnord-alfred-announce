@@ -1,36 +1,23 @@
 #!/bin/bash
 
+#set -x #echo on
+
+
 DIR="$(dirname "$0")"
+ALFRED=/usr/local/sbin/alfred
+ANNOUNCE_OPTS=""
 
 while test $# -gt 0; do
   case $1 in
-    -i)
+    -c)
       shift
-      ip link show dev $1 > /dev/null
-      test $? -ne 0 && exit
-      INTERFACE="-i $1"
-      ;;
-    -b)
-      shift
-      ip link show dev $1 > /dev/null
-      test $? -ne 0 && exit
-      BATADV="-b $1"
-      ;;
-    -f)
-      shift
-      ip link show dev $1 > /dev/null
-      test $? -ne 0 && exit
-      FASTD="-f $1"
+      ANNOUNCE_OPTS+=" --cfg $1"
       ;;
     -u)
       shift
-      alfred-json -z -r 158 -s $1 > /dev/null
-      test $? -ne 0 && exit
+      #alfred-json -z -r 158 -s $1 > /dev/null
+      #test $? -ne 0 && exit
       ALFREDSOCKET="-u $1"
-      ;;
-    -s)
-      shift
-      SITECODE="-s $1"
       ;;
     -h|--help)
       echo "Usage: $0 [-i <ifname>] [-b <batadv-dev>] [-f <fastd-dev>] [-u <alfred-socket>] [-s <site_code>]"
@@ -40,5 +27,9 @@ while test $# -gt 0; do
   shift
 done
 
-"${DIR}"/announce.py -d "${DIR}"/nodeinfo.d/ ${INTERFACE} ${BATADV} ${FASTD} ${SITECODE} | gzip | alfred $ALFREDSOCKET $INTERFACE -s 158
-"${DIR}"/announce.py -d "${DIR}"/statistics.d/ ${INTERFACE} ${BATADV} ${FASTD} ${SITECODE} | gzip | alfred $ALFREDSOCKET $INTERFACE -s 159
+"${DIR}"/announce.py -d "${DIR}"/nodeinfo.d/   ${ANNOUNCE_OPTS}  | python -m json.tool
+"${DIR}"/announce.py -d "${DIR}"/statistics.d/ ${ANNOUNCE_OPTS}  | python -m json.tool
+
+"${DIR}"/announce.py -d "${DIR}"/nodeinfo.d/   ${ANNOUNCE_OPTS} | gzip | $ALFRED $ALFREDSOCKET -s 158
+"${DIR}"/announce.py -d "${DIR}"/statistics.d/ ${ANNOUNCE_OPTS} | gzip | $ALFRED $ALFREDSOCKET -s 159
+

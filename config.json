@@ -1,0 +1,12 @@
+{
+  "node_id": "gw2",
+  "hostname": "gw2",
+  "contact": "sunzi@viacobra.de",
+  "role": "gateway",
+  "site_code": "ffggrz",
+  "network": {
+    "batman": "ggrzBAT",
+    "fastd": "ggrzVPN",
+    "bridge": "ggrzBR"
+  }
+}

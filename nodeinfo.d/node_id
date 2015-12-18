@@ -1,1 +1,1 @@
-mac_mesh(fastd_dev).replace(':','')
+node_id(fastd_dev)

@@ -69,7 +69,7 @@ def clients(batadv_dev):
       count += 1
 
   return count
-
+ 
 def addresses(bridge_dev):
   ip_addrs = netif.ifaddresses(bridge_dev)
   ip_list = []
@@ -99,6 +99,46 @@ def mac_mesh(fastd_dev,meshmode=False):
   else:
     return mac[0]['addr']
 
+def mesh_interfaces(batadv_dev):
+  output = subprocess.check_output(["batctl","-m",batadv_dev,"if"])
+  output_utf8 = output.decode("utf-8")
+  lines = output_utf8.splitlines()
+  mesh = []
+
+  for line in lines:
+    dev_line = re.match(r"^(\w*)", line)
+    interface = netif.ifaddresses(dev_line.group(0))
+    mac = interface[netif.AF_LINK]
+    mesh.append(mac[0]['addr'])
+
+  return mesh
+
+def bat0_mesh(batadv_dev):
+  output = subprocess.check_output(["batctl","-m",batadv_dev,"if"])
+  output_utf8 = output.decode("utf-8")
+  lines = output_utf8.splitlines()
+  mesh = {"tunnel" : []}
+
+  for line in lines:
+    dev_line = re.match(r"^(\w*)", line)
+    interface = netif.ifaddresses(dev_line.group(0))
+    mac = interface[netif.AF_LINK]
+    mesh["tunnel"].append(mac[0]['addr'])
+
+  return mesh
+
+def node_id(dev):
+  if 'node_id' in config:
+    return config['node_id']
+  else:
+    return mac_mesh(dev).replace(':','')
+
+def hostname():
+  if 'hostname' in config:
+    return config['hostname']
+  else:
+    return socket.gethostname()
+
 def cpu_info():
   info = cpuinfo.get_cpu_info()
   return info['brand']
@@ -108,37 +148,34 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--directory', action='store',
                   help='structure directory',required=True)
 
-parser.add_argument('-b', '--batman', action='store',
-                  help='batman-adv device',default='bat0')
-
-parser.add_argument('-f', '--fastd', action='store',
-                  help='batman-adv device',default='mesh-vpn')
-
-parser.add_argument('-i', '--interface', action='store',
-                  help='freifunk bridge',default='br0')
-
-parser.add_argument('-s', '--sitecode', action='store',
-                  help='freifunk site code',default='ffgotham')
+parser.add_argument('-c', '--cfg', action='store',
+                  help='config file',required=True)
 
 args = parser.parse_args()
 
 options = vars(args)
 
-directory = options['directory']
-batadv_dev = options['batman']
-fastd_dev = options['fastd']
-bridge_dev = options['interface']
-sitecode = options['sitecode']
+try:
+  with open(options['cfg'], 'r') as cfg_handle:
+    config = json.load(cfg_handle)
+except IOError:
+  raise
+
+batadv_dev = config['network']['batman']
+fastd_dev =  config['network']['fastd']
+bridge_dev = config['network']['bridge']
 
 data = {}
 
-for dirname, dirnames, filenames in os.walk(directory):
+for dirname, dirnames, filenames in os.walk(options['directory']):
   for filename in filenames:
     if filename[0] != '.':
-      relPath = os.path.relpath(dirname + os.sep + filename,directory);
+      relPath = os.path.relpath(dirname + os.sep + filename,options['directory']);
       fh = open(dirname + os.sep + filename,'r', errors='replace')
       source = fh.read()
       fh.close()
       value = eval(source)
       setValue(data,relPath.rsplit(os.sep),value)
+#print(json.dumps(data, sort_keys=True, indent=4))
 print(json.dumps(data))
+
