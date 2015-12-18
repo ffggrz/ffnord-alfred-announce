@@ -148,15 +148,15 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--directory', action='store',
                   help='structure directory',required=True)
 
-parser.add_argument('-c', '--cfg', action='store',
-                  help='config file',required=True)
+#parser.add_argument('-c', '--cfg', action='store',
+#                  help='config file',required=True)
 
 args = parser.parse_args()
 
 options = vars(args)
 
 try:
-  with open(options['cfg'], 'r') as cfg_handle:
+  with open("config.json", 'r') as cfg_handle:
     config = json.load(cfg_handle)
 except IOError:
   raise
