@@ -106,7 +106,7 @@ def mesh_interfaces(batadv_dev):
   mesh = []
 
   for line in lines:
-    dev_line = re.match(r"^(\w*)", line)
+    dev_line = re.matchr"^([^:]*)", line)
     interface = netif.ifaddresses(dev_line.group(0))
     mac = interface[netif.AF_LINK]
     mesh.append(mac[0]['addr'])
@@ -117,13 +117,17 @@ def bat0_mesh(batadv_dev):
   output = subprocess.check_output(["batctl","-m",batadv_dev,"if"])
   output_utf8 = output.decode("utf-8")
   lines = output_utf8.splitlines()
-  mesh = {"tunnel" : []}
+  mesh = {"tunnel" : [], "other" : []}
 
   for line in lines:
-    dev_line = re.match(r"^(\w*)", line)
-    interface = netif.ifaddresses(dev_line.group(0))
+    dev_line = re.match(r"^([^:]*)", line)
+    nif = dev_line.group(0)
+    interface = netif.ifaddresses(nif)
     mac = interface[netif.AF_LINK]
-    mesh["tunnel"].append(mac[0]['addr'])
+    if 'mesh' in config['network'] and nif in config['network']['mesh']:
+      mesh["other"].append(mac[0]['addr'])
+    else:
+      mesh["tunnel"].append(mac[0]['addr'])
 
   return mesh
 
