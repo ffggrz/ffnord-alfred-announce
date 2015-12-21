@@ -106,7 +106,7 @@ def mesh_interfaces(batadv_dev):
   mesh = []
 
   for line in lines:
-    dev_line = re.matchr"^([^:]*)", line)
+    dev_line = re.match(r"^([^:]*)", line)
     interface = netif.ifaddresses(dev_line.group(0))
     mac = interface[netif.AF_LINK]
     mesh.append(mac[0]['addr'])
